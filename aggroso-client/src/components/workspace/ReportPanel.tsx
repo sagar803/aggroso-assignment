@@ -1,8 +1,34 @@
+import { useCallback, useState } from "react";
+import { Save, Check } from "lucide-react";
 import { useCSVStore } from "../../stores/csvStore";
+import { useReportStorage } from "../../hooks/useReportStorage";
 
 export function ReportPanel() {
     const csvData = useCSVStore((s) => s.csvData);
     const insights = useCSVStore((s) => s.insights);
+    const { saveReport } = useReportStorage();
+
+    const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+
+    const handleSaveReport = useCallback(() => {
+        if (!csvData || !insights) {
+            console.error("Cannot save: missing CSV data or insights");
+            return;
+        }
+
+        setSaveStatus("saving");
+
+        try {
+            saveReport(csvData.filename || "report.csv", csvData, insights);
+            setSaveStatus("saved");
+
+            // Reset to idle after 2 seconds
+            setTimeout(() => setSaveStatus("idle"), 2000);
+        } catch (error) {
+            console.error("Failed to save report:", error);
+            setSaveStatus("idle");
+        }
+    }, [csvData, insights, saveReport]);
 
     // Don't render if no data or insights (loading handled at top level)
     if (!csvData || !insights) return null;
@@ -25,8 +51,8 @@ export function ReportPanel() {
         <div className="flex-1 min-w-0 overflow-y-auto px-9 py-8 flex flex-col gap-7 border-r border-zinc-800">
 
             {/* HEADER */}
-            <div className="flex justify-between">
-                <div>
+            <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
                     <div className="text-3xl leading-tight tracking-tight" style={{ fontFamily: "'DM Serif Display', serif" }}>
                         {csvData.filename.split(".")[0]}_
                         <span className="italic text-indigo-400">
@@ -37,11 +63,30 @@ export function ReportPanel() {
 
                     <div className="text-xs text-zinc-400 mt-1.5">
                         {csvData.rowCount.toLocaleString()} rows · {csvData.columnCount} columns
-                        <span className="ml-2 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full border border-emerald-400/30 bg-emerald-400/10">
-                            ✓ saved
-                        </span>
                     </div>
                 </div>
+
+                {/* Save Report Button */}
+                <button
+                    onClick={handleSaveReport}
+                    disabled={saveStatus === "saving"}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border transition-all duration-200 shrink-0 ${saveStatus === "saved"
+                            ? "border-emerald-500 bg-emerald-500/10 text-emerald-400"
+                            : "border-zinc-800 bg-zinc-900 text-zinc-300 hover:border-indigo-500 hover:bg-indigo-500/10 hover:text-white"
+                        } ${saveStatus === "saving" ? "opacity-50 cursor-not-allowed" : ""}`}
+                >
+                    {saveStatus === "saved" ? (
+                        <>
+                            <Check className="w-4 h-4" />
+                            <span>Saved!</span>
+                        </>
+                    ) : (
+                        <>
+                            <Save className="w-4 h-4" />
+                            <span>Save Report</span>
+                        </>
+                    )}
+                </button>
             </div>
 
             {/* DATA HEALTH */}

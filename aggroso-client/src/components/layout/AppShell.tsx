@@ -85,6 +85,28 @@ export function AppShell() {
 
                     {/* Actions */}
                     <div className="flex items-center gap-2">
+                        {/* Home button - only show on status page */}
+                        {page === "status" && (
+                            <button
+                                onClick={() => setPage("home")}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-indigo-500 hover:text-white transition-colors"
+                            >
+                                <Home className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Home</span>
+                            </button>
+                        )}
+
+                        {/* Health Status button - only show on home page */}
+                        {page === "home" && (
+                            <button
+                                onClick={() => setPage("status")}
+                                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-zinc-800 bg-zinc-900 text-zinc-400 hover:border-indigo-500 hover:text-white transition-colors"
+                            >
+                                <Activity className="w-3.5 h-3.5" />
+                                <span className="hidden sm:inline">Health Status</span>
+                            </button>
+                        )}
+
                         {/* Report History Dropdown */}
                         <ReportHistoryDropdown />
 
