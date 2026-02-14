@@ -3,7 +3,6 @@ import Papa from "papaparse";
 import * as XLSX from "xlsx";
 import { useCSVStore } from "../stores/csvStore";
 import type { ParsedCSV } from "../types/csv.types";
-import { detectFormat } from "../lib/sessionStorage";
 
 // ── Parse Excel / ODS via SheetJS ────────────────────────────────────────────
 async function parseSpreadsheet(
@@ -70,6 +69,20 @@ function parseDelimited(
         });
     });
 }
+
+
+export type FileFormat = "csv" | "xlsx" | "xls" | "tsv" | "ods";
+
+// ── Format detection ──────────────────────────────────────────────────────────
+export function detectFormat(filename: string): FileFormat {
+    const ext = filename.split(".").pop()?.toLowerCase();
+    if (ext === "xlsx") return "xlsx";
+    if (ext === "xls") return "xls";
+    if (ext === "tsv") return "tsv";
+    if (ext === "ods") return "ods";
+    return "csv";
+}
+
 
 // ── Main hook ─────────────────────────────────────────────────────────────────
 export function useFileParser() {

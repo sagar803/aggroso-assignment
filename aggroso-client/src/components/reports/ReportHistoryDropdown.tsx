@@ -12,7 +12,6 @@ export function ReportHistoryDropdown() {
     const setInsights = useCSVStore((s) => s.setInsights);
     const setInsightsStatus = useCSVStore((s) => s.setInsightsStatus);
     const setFlowStep = useCSVStore((s) => s.setFlowStep);
-    const setSessionId = useCSVStore((s) => s.setSessionId);
 
     // Debug: Log reports whenever they change
     useEffect(() => {
@@ -44,7 +43,6 @@ export function ReportHistoryDropdown() {
             setInsights(report.insights);
             setInsightsStatus("success");
             setFlowStep("done");
-            setSessionId(report.id);
             setPage("workspace");
             setIsOpen(false);
         } catch (error) {

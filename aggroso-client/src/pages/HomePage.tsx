@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { UploadCloud, AlertCircle, Clock, FileText, Zap, Shield, CheckCircle2 } from "lucide-react";
 import { useAutoFlow } from "../hooks/useAutoFlow";
-import { loadSessions, getSupportedAccept } from "../lib/sessionStorage";
-import type { WorkSession } from "../lib/sessionStorage";
 
 const FORMATS = [
     { ext: "CSV", color: "#34d399" },
@@ -23,9 +21,7 @@ export function HomePage() {
     const inputRef = useRef<HTMLInputElement>(null);
     const [isDragging, setIsDragging] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [sessions, setSessions] = useState<WorkSession[]>([]);
 
-    useEffect(() => { setSessions(loadSessions()); }, []);
 
     const handleFile = useCallback(async (file: File) => {
         if (!/\.(csv|tsv|xlsx|xls|ods)$/i.test(file.name)) {
@@ -85,7 +81,7 @@ export function HomePage() {
                         onDragLeave={() => setIsDragging(false)}
                         onDrop={onDrop}
                     >
-                        <input ref={inputRef} type="file" accept={getSupportedAccept()} className="sr-only"
+                        <input ref={inputRef} type="file" accept={".csv,.tsv,.xlsx,.xls,.ods"} className="sr-only"
                             onChange={e => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ""; }} />
 
                         <div className="flex flex-col items-center gap-3 pointer-events-none">
@@ -135,35 +131,6 @@ export function HomePage() {
                     </div>
                 </div>
             </section>
-
-            {/* ── Recent sessions ───────────────────────────────────────────────── */}
-            {sessions.length > 0 && (
-                <section className="px-6 pb-12">
-                    <div className="max-w-3xl mx-auto">
-                        <div className="flex items-center gap-2 mb-3">
-                            <Clock className="w-3.5 h-3.5" style={{ color: "var(--muted)" }} />
-                            <span className="text-xs font-semibold" style={{ color: "var(--muted)" }}>Recent work</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                            {sessions.slice(0, 4).map((s) => (
-                                <div key={s.id} className="flex items-center gap-3 p-3 rounded-xl"
-                                    style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
-                                    <div className="w-2 h-2 rounded-full flex-shrink-0"
-                                        style={{ background: s.status === "done" ? "var(--green)" : s.status === "error" ? "var(--red)" : "var(--amber)" }} />
-                                    <FileText className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "var(--muted)" }} />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-xs font-medium truncate">{s.filename}</p>
-                                        <p className="text-[10px] font-mono-dm" style={{ color: "var(--muted2)" }}>{s.id.slice(-10)}</p>
-                                    </div>
-                                    {s.healthScore !== undefined && (
-                                        <span className="text-xs font-bold" style={{ color: "var(--muted)" }}>{s.healthScore}</span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-                </section>
-            )}
 
             {/* ── Feature strip ─────────────────────────────────────────────────── */}
             <section style={{ borderTop: "1px solid var(--border)", background: "var(--surface)" }}>

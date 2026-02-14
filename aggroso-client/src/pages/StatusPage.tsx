@@ -1,7 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { RefreshCw, Server, HardDrive, Wifi, Activity, Database } from "lucide-react";
-import { loadSessions, clearAllSessions } from "../lib/sessionStorage";
-import type { WorkSession } from "../lib/sessionStorage";
 
 type CheckStatus = "checking" | "ok" | "error" | "warn";
 
@@ -26,13 +24,6 @@ function Dot({ status }: { status: CheckStatus }) {
     );
 }
 
-function localKB() {
-    try {
-        return Math.round([...Array(localStorage.length)].reduce((a, _, i) =>
-            a + (localStorage.getItem(localStorage.key(i) ?? "") ?? "").length * 2, 0) / 1024);
-    } catch { return 0; }
-}
-
 export function StatusPage() {
     const [checks, setChecks] = useState<HealthCheck[]>([
         { name: "API Server", status: "checking" },
@@ -41,8 +32,6 @@ export function StatusPage() {
     ]);
     const [refreshing, setRefreshing] = useState(false);
     const [lastChecked, setLastChecked] = useState<Date | null>(null);
-    const [sessions, setSessions] = useState<WorkSession[]>([]);
-    const [storageKB, setStorageKB] = useState(0);
 
     async function runChecks() {
         setRefreshing(true);
@@ -91,12 +80,9 @@ export function StatusPage() {
 
         setChecks(out);
         setLastChecked(new Date());
-        setSessions(loadSessions());
-        setStorageKB(localKB());
         setRefreshing(false);
     }
 
-    useEffect(() => { runChecks(); setSessions(loadSessions()); setStorageKB(localKB()); }, []); // eslint-disable-line
 
     const allOk = checks.every(c => c.status === "ok");
     const hasErr = checks.some(c => c.status === "error");
@@ -144,98 +130,6 @@ export function StatusPage() {
                             {c.latency !== undefined && (
                                 <span className="font-mono-dm text-xs" style={{ color: "var(--muted2)" }}>{c.latency}ms</span>
                             )}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Local storage */}
-            <div>
-                <div className="flex items-center gap-2 mb-3">
-                    <HardDrive className="w-4 h-4" style={{ color: "var(--muted)" }} />
-                    <h2 className="text-sm font-semibold">Local storage</h2>
-                </div>
-                <div className="rounded-2xl border p-4 space-y-3"
-                    style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                    <div className="flex justify-between text-sm">
-                        <span style={{ color: "var(--muted)" }}>Usage</span>
-                        <span className="font-mono-dm text-xs">{storageKB} KB</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                        <span style={{ color: "var(--muted)" }}>Saved sessions</span>
-                        <span className="font-mono-dm text-xs">{sessions.length}</span>
-                    </div>
-                    <div className="h-px" style={{ background: "var(--border)" }} />
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs" style={{ color: "var(--muted)" }}>Stored in your browser only.</p>
-                        <button onClick={() => { clearAllSessions(); setSessions([]); setStorageKB(localKB()); }}
-                            disabled={sessions.length === 0}
-                            className="text-xs transition-colors disabled:opacity-40"
-                            style={{ color: "var(--red)" }}>
-                            Clear all
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Operation log */}
-            <div>
-                <div className="flex items-center gap-2 mb-3">
-                    <Database className="w-4 h-4" style={{ color: "var(--muted)" }} />
-                    <h2 className="text-sm font-semibold">Operation log</h2>
-                </div>
-                {sessions.length === 0 ? (
-                    <div className="rounded-2xl border border-dashed py-10 text-center text-sm"
-                        style={{ borderColor: "var(--border2)", color: "var(--muted)" }}>
-                        No sessions yet. Upload a file to get started.
-                    </div>
-                ) : (
-                    <div className="rounded-2xl border overflow-hidden divide-y"
-                        style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                        {sessions.map((s) => (
-                            <div key={s.id} className="px-4 py-3">
-                                <div className="flex items-center justify-between gap-2">
-                                    <div className="flex items-center gap-2 min-w-0">
-                                        <Dot status={s.status === "done" ? "ok" : s.status === "error" ? "error" : "warn"} />
-                                        <span className="text-sm font-medium truncate">{s.filename}</span>
-                                    </div>
-                                    <span className="text-[10px] px-2 py-0.5 rounded-full font-medium flex-shrink-0"
-                                        style={{
-                                            background: s.status === "done" ? "rgba(52,211,153,0.1)" : s.status === "error" ? "rgba(248,113,113,0.1)" : "rgba(251,191,36,0.1)",
-                                            color: s.status === "done" ? "var(--green)" : s.status === "error" ? "var(--red)" : "var(--amber)",
-                                        }}>
-                                        {s.status}
-                                    </span>
-                                </div>
-                                <div className="flex gap-3 mt-1 text-[10px] font-mono-dm pl-4" style={{ color: "var(--muted2)" }}>
-                                    <span>{s.id}</span>
-                                    <span>·</span>
-                                    <span>{new Date(s.startedAt).toLocaleString()}</span>
-                                    {s.rowCount > 0 && <><span>·</span><span>{s.rowCount.toLocaleString()} rows</span></>}
-                                    {s.healthScore !== undefined && <><span>·</span><span>health: {s.healthScore}</span></>}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                )}
-            </div>
-
-            {/* Environment */}
-            <div>
-                <div className="flex items-center gap-2 mb-3">
-                    <Wifi className="w-4 h-4" style={{ color: "var(--muted)" }} />
-                    <h2 className="text-sm font-semibold">Environment</h2>
-                </div>
-                <div className="rounded-2xl border overflow-hidden divide-y"
-                    style={{ borderColor: "var(--border)", background: "var(--surface)" }}>
-                    {[
-                        ["Client URL", window.location.origin],
-                        ["API base", `${window.location.origin}/api`],
-                        ["Browser online", navigator.onLine ? "Yes" : "No"],
-                    ].map(([k, v]) => (
-                        <div key={k} className="flex justify-between items-center px-4 py-2.5 gap-4">
-                            <span className="text-xs" style={{ color: "var(--muted)" }}>{k}</span>
-                            <span className="font-mono-dm text-xs truncate max-w-xs" style={{ color: "var(--text)" }}>{v}</span>
                         </div>
                     ))}
                 </div>

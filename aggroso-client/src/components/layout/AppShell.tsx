@@ -2,7 +2,6 @@ import { useCallback, useState } from "react";
 import { BarChart2, Home, Activity, PlusCircle, Table } from "lucide-react";
 import { useCSVStore } from "../../stores/csvStore";
 import { useAutoFlow } from "../../hooks/useAutoFlow";
-import { getSupportedAccept } from "../../lib/sessionStorage";
 import { HomePage } from "../../pages/HomePage";
 import { StatusPage } from "../../pages/StatusPage";
 import { ReportPanel } from "../workspace/ReportPanel";
@@ -76,13 +75,6 @@ export function AppShell() {
                         </div>
                     )}
 
-                    {/* Session ID */}
-                    {csvData && (
-                        <div className="font-mono text-[10px] text-zinc-500 bg-zinc-900 border border-zinc-800 px-2 py-1 rounded">
-                            op_12345
-                        </div>
-                    )}
-
                     {/* Actions */}
                     <div className="flex items-center gap-2">
                         {/* Home button - only show on status page */}
@@ -131,7 +123,7 @@ export function AppShell() {
                                 <span className="hidden sm:inline">New file</span>
                                 <input
                                     type="file"
-                                    accept={getSupportedAccept()}
+                                    accept={".csv,.tsv,.xlsx,.xls,.ods"}
                                     className="sr-only"
                                     onChange={handleNewFile}
                                 />

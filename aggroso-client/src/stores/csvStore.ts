@@ -2,7 +2,6 @@ import { create } from "zustand";
 import type { ParsedCSV } from "../types/csv.types";
 import type { InsightsResult, InsightsStatus } from "../types/insights.types";
 import type { SavedReport } from "../types/schema";
-import type { WorkSession } from "../lib/sessionStorage";
 
 export type AppPage = "home" | "workspace" | "status";
 
@@ -10,10 +9,6 @@ interface CSVStore {
     // ── Current page / routing ───────────────────────────────────────────────────
     page: AppPage;
     setPage: (page: AppPage) => void;
-
-    // ── Active session ────────────────────────────────────────────────────────────
-    sessionId: string | null;
-    setSessionId: (id: string) => void;
 
     // ── Parsed CSV data ───────────────────────────────────────────────────────────
     csvData: ParsedCSV | null;
@@ -24,7 +19,6 @@ interface CSVStore {
     clearCSV: () => void;
 
     // ── Auto-flow progress ────────────────────────────────────────────────────────
-    // Tracks which steps have completed so UI can show animated progress
     flowStep: "idle" | "upload" | "parse" | "analyze" | "done";
     setFlowStep: (step: CSVStore["flowStep"]) => void;
 
@@ -49,23 +43,25 @@ interface CSVStore {
     addReport: (report: SavedReport) => void;
     removeReport: (id: string) => void;
 
-    // ── Sessions (recent work) ────────────────────────────────────────────────────
-    sessions: WorkSession[];
-    setSessions: (sessions: WorkSession[]) => void;
-
     // ── UI state ──────────────────────────────────────────────────────────────────
     activeTab: "table" | "charts" | "insights";
     setActiveTab: (tab: "table" | "charts" | "insights") => void;
+}
+function loadSavedReports(): SavedReport[] {
+    if (typeof window === "undefined") return [];
+
+    try {
+        const raw = localStorage.getItem("csv-insights:reports");
+        return raw ? JSON.parse(raw) : [];
+    } catch {
+        return [];
+    }
 }
 
 export const useCSVStore = create<CSVStore>((set) => ({
     // ── Page routing ──────────────────────────────────────────────────────────────
     page: "home",
     setPage: (page) => set({ page }),
-
-    // ── Session ───────────────────────────────────────────────────────────────────
-    sessionId: null,
-    setSessionId: (sessionId) => set({ sessionId }),
 
     // ── CSV data ──────────────────────────────────────────────────────────────────
     csvData: null,
@@ -89,7 +85,6 @@ export const useCSVStore = create<CSVStore>((set) => ({
             followUpStatus: "idle",
             activeTab: "table",
             flowStep: "idle",
-            sessionId: null,
         }),
 
     // ── Auto-flow ─────────────────────────────────────────────────────────────────
@@ -114,20 +109,16 @@ export const useCSVStore = create<CSVStore>((set) => ({
     setFollowUpStatus: (followUpStatus) => set({ followUpStatus }),
 
     // ── Saved reports ─────────────────────────────────────────────────────────────
-    savedReports: [],
+    savedReports: loadSavedReports(),
     setSavedReports: (savedReports) => set({ savedReports }),
     addReport: (report) =>
         set((state) => ({
-            savedReports: [report, ...state.savedReports].slice(0, 10),
+            savedReports: [report, ...state.savedReports].slice(0, 5),
         })),
     removeReport: (id) =>
         set((state) => ({
             savedReports: state.savedReports.filter((r) => r.id !== id),
         })),
-
-    // ── Sessions ──────────────────────────────────────────────────────────────────
-    sessions: [],
-    setSessions: (sessions) => set({ sessions }),
 
     // ── UI ────────────────────────────────────────────────────────────────────────
     activeTab: "table",

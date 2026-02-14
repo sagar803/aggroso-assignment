@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useCSVStore } from "../stores/csvStore";
 import type { SavedReport } from "../types/schema";
 import type { ParsedCSV } from "../types/csv.types";
@@ -13,7 +13,10 @@ export function useReportStorage() {
     const addReportToStore = useCSVStore((s) => s.addReport);
     const removeReportFromStore = useCSVStore((s) => s.removeReport);
 
-    // Load from localStorage on mount
+    // Track if we've loaded from localStorage yet
+    const hasLoaded = useRef(false);
+
+    // Load from localStorage on mount (runs ONCE)
     useEffect(() => {
         try {
             const raw = localStorage.getItem(STORAGE_KEY);
@@ -21,14 +24,22 @@ export function useReportStorage() {
                 const parsed: SavedReport[] = JSON.parse(raw);
                 setSavedReports(parsed.slice(0, MAX_REPORTS));
             }
+            hasLoaded.current = true;
         } catch {
             // Silently ignore corrupt storage
+            hasLoaded.current = true;
         }
     }, [setSavedReports]);
 
-    // Persist whenever reports change
+    // Persist whenever reports change (but ONLY after initial load)
     useEffect(() => {
+        if (!hasLoaded.current) {
+            // Don't save until we've loaded first
+            return;
+        }
+
         try {
+            console.log('Saving reports to localStorage:', savedReports.length);
             localStorage.setItem(STORAGE_KEY, JSON.stringify(savedReports));
         } catch {
             // Storage might be full; silently ignore
